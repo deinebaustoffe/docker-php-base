@@ -2,6 +2,10 @@ FROM php:7.4-alpine
 
 LABEL maintainer="Florian Wartner <florian.wartner@deinebaustoffe.de>"
 
+# IMAGE ARGUMENTS WITH DEFAULTS.
+ARG NGINX_HTTP_PORT=80
+ARG NGINX_HTTPS_PORT=443
+
 # Install dev dependencies
 RUN apk add --no-cache --virtual .build-deps \
     $PHPIZE_DEPS \
@@ -14,6 +18,11 @@ RUN apk add --no-cache --virtual .build-deps \
 
 # Install production dependencies
 RUN apk add --no-cache \
+    bash \
+    supervisor \
+    git \
+    nano \
+    nginx \
     bash \
     curl \
     freetype-dev \
@@ -79,5 +88,21 @@ RUN composer global require hirak/prestissimo
 # Cleanup dev dependencies
 RUN apk del -f .build-deps
 
+# ADD START SCRIPT, SUPERVISOR CONFIG, NGINX CONFIG AND RUN SCRIPTS.
+ADD start.sh /start.sh
+ADD config/supervisor/supervisord.conf /etc/supervisord.conf
+RUN mkdir /etc/supervisor/
+ADD config/nginx/nginx.conf /etc/nginx/nginx.conf
+ADD config/nginx/site.conf /etc/nginx/sites-available/default.conf
+ADD config/php/php.ini /etc/php7/php.ini
+ADD config/php-fpm/www.conf /etc/php7/php-fpm.d/www.conf
+RUN chmod 755 /start.sh
+
+# EXPOSE PORTS!
+EXPOSE ${NGINX_HTTPS_PORT} ${NGINX_HTTP_PORT}
+
 # Setup working directory
 WORKDIR /var/www
+
+# KICKSTART!
+CMD ["/start.sh"]

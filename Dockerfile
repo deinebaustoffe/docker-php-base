@@ -1,10 +1,6 @@
-FROM php:7.4-alpine
+FROM php:7.4-fpm-alpine
 
 LABEL maintainer="Florian Wartner <florian.wartner@deinebaustoffe.de>"
-
-# IMAGE ARGUMENTS WITH DEFAULTS.
-ARG NGINX_HTTP_PORT=80
-ARG NGINX_HTTPS_PORT=443
 
 # Install dev dependencies
 RUN apk add --no-cache --virtual .build-deps \
@@ -22,7 +18,6 @@ RUN apk add --no-cache \
     supervisor \
     git \
     nano \
-    nginx \
     bash \
     curl \
     freetype-dev \
@@ -98,8 +93,7 @@ ADD config/php/php.ini /etc/php7/php.ini
 ADD config/php-fpm/www.conf /etc/php7/php-fpm.d/www.conf
 RUN chmod 755 /start.sh
 
-# EXPOSE PORTS!
-EXPOSE ${NGINX_HTTPS_PORT} ${NGINX_HTTP_PORT}
+EXPOSE 9000
 
 # Setup working directory
 WORKDIR /var/www

@@ -15,6 +15,7 @@ RUN apk add --no-cache --virtual .build-deps \
 # Install production dependencies
 RUN apk add --no-cache \
     bash \
+    nginx \
     supervisor \
     git \
     nano \
@@ -92,11 +93,12 @@ ADD config/supervisor/supervisord.conf /etc/supervisord.conf
 RUN mkdir /etc/supervisor/
 ADD config/nginx/nginx.conf /etc/nginx/nginx.conf
 ADD config/nginx/site.conf /etc/nginx/sites-available/default.conf
-ADD config/php/php.ini /etc/php7/php.ini
+ADD config/php/php.ini /etc/php7//php.ini
 ADD config/php-fpm/www.conf /etc/php7/php-fpm.d/www.conf
 RUN chmod 755 /start.sh
 
 EXPOSE 9000
+EXPOSE 80
 
 # Setup working directory
 WORKDIR /var/www

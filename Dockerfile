@@ -41,6 +41,9 @@ RUN apk add --no-cache \
     rsync \
     zlib-dev
 
+# Fix NGINX
+RUN mkdir -p /run/nginx
+
 # Install PECL and PEAR extensions
 RUN pecl install \
     imagick \

@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://raw.githubusercontent.com/deinebaustoffe/docker-php-base/master/.github/repository_logo.png">
+    <img src="https://github.com/deinebaustoffe/docker-php-base/raw/master/.github/repository_logo.png">
 </p>
 
 # php-base

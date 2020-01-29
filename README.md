@@ -1,5 +1,9 @@
+<p align="center">
+    <img src="https://raw.githubusercontent.com/deinebaustoffe/docker-php-base/master/.github/repository_logo.png">
+</p>
+
 # php-base
-Docker Base Image with PHP 7.3
+Docker Base Image with PHP 7.4
 
 # Laravel Application - Quick Run
 Using the Laravel installer you can get up and running with a Laravel application inside Docker in minutes.

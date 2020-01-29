@@ -52,7 +52,6 @@ RUN apk add --no-cache --update php7-dev@php \
     php-pdo@php \
     php-redis@php \
     php-iconv@php \
-    php-pdo_mysql@php \
     php-mbstring@php \
     php-sockets@php \
     php-phar@php \
@@ -70,8 +69,9 @@ RUN apk add --no-cache --update php7-dev@php \
     php-xml@php \
     php-zip@php \
     php-xmlreader@php \
-    php-soap@php
-
+    php-soap@php \
+    php-amqp@php \
+    php-pdo_mysql@php
 
 RUN pecl channel-update pecl.php.net \
     && ln -s /usr/bin/php7 /usr/bin/php \

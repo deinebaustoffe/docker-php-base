@@ -1,91 +1,98 @@
-FROM php:7.4-fpm-alpine
+FROM nginx:mainline-alpine
 
 LABEL maintainer="Florian Wartner <florian.wartner@deinebaustoffe.de>"
 
-# Install dev dependencies
-RUN apk add --no-cache --virtual .build-deps \
-    $PHPIZE_DEPS \
-    curl-dev \
-    imagemagick-dev \
-    libtool \
-    libxml2-dev \
-    postgresql-dev \
-    sqlite-dev
+# INSTALL SOME SYSTEM PACKAGES.
+RUN apk --update --no-cache add ca-certificates \
+    bash supervisor git nano
 
-# Install production dependencies
-RUN apk add --no-cache \
-    bash \
-    nginx \
-    supervisor \
-    git \
-    nano \
-    bash \
-    curl \
-    freetype-dev \
-    g++ \
-    gcc \
-    git \
-    imagemagick \
-    libc-dev \
-    libjpeg-turbo-dev \
-    libpng-dev \
-    libzip-dev \
-    make \
-    mysql-client \
-    nodejs \
-    nodejs-npm \
-    oniguruma-dev \
-    yarn \
-    openssh-client \
-    postgresql-libs \
-    rsync \
-    zlib-dev
+ADD https://dl.bintray.com/php-alpine/key/php-alpine.rsa.pub /etc/apk/keys/php-alpine.rsa.pub
 
-# Fix NGINX
-RUN mkdir -p /run/nginx
+# IMAGE ARGUMENTS WITH DEFAULTS.
 
-# Install PECL and PEAR extensions
-RUN pecl install \
-    imagick \
-    redis
+ARG PHP_VERSION=7.4
+ARG ALPINE_VERSION=3.9
+ARG NGINX_HTTP_PORT=80
+ARG NGINX_HTTPS_PORT=443
+
+RUN apk --update add ca-certificates
     
-RUN docker-php-ext-install sockets
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/v${ALPINE_VERSION}/main" > /etc/apk/repositories && \
+    echo "http://dl-cdn.alpinelinux.org/alpine/v${ALPINE_VERSION}/community" >> /etc/apk/repositories && \
+    echo "@php https://dl.bintray.com/php-alpine/v3.9/php-${PHP_VERSION}" >> /etc/apk/repositories
 
-# Enable PECL and PEAR extensions
-RUN docker-php-ext-enable \
-    imagick \
-    redis \
-    sockets
-
-# Configure php extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg
-
-# Install php extensions
-RUN docker-php-ext-install \
-    bcmath \
-    calendar \
+RUN apk add --no-cache --virtual .build-deps \
+    autoconf \
+    gcc \
+    libc-dev \
+    make \
+    openssl-dev \
+    pcre-dev \
+    zlib-dev \
+    linux-headers \
     curl \
-    exif \
-    gd \
-    iconv \
-    mbstring \
-    pdo \
-    pdo_mysql \
-    pdo_pgsql \
-    pdo_sqlite \
-    pcntl \
-    tokenizer \
-    xml \
-    zip
+    gnupg \
+    libxslt-dev \
+    gd-dev \
+    geoip-dev \
+    perl-dev \
+    luajit-dev
 
-# Install composer
-ENV COMPOSER_HOME /composer
-ENV PATH ./vendor/bin:/composer/vendor/bin:$PATH
-ENV COMPOSER_ALLOW_SUPERUSER 1
-RUN curl -s https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin/ --filename=composer
+# INSTALL PHP AND SOME EXTENSIONS. SEE: https://github.com/codecasts/php-alpine
+RUN apk add --no-cache --update php7-dev@php \
+    php-fpm@php \
+    php7-pear@php \
+    libmcrypt-dev \
+    freetype-dev \
+    libpng-dev \
+    libpq \
+    php@php \
+    php-openssl@php \
+    php-gd@php \
+    php-pdo@php \
+    php-redis@php \
+    php-iconv@php \
+    php-pdo_mysql@php \
+    php-mbstring@php \
+    php-sockets@php \
+    php-phar@php \
+    php-exif@php \
+    php-mysqlnd@php \
+    php-session@php \
+    php-dom@php \
+    php-ctype@php \
+    php-posix@php \
+    php-zlib@php \
+    php-json@php \
+    php-bcmath@php \
+    php-curl@php \
+    php-pcntl@php \
+    php-xml@php \
+    php-zip@php \
+    php-xmlreader@php \
+    php-soap@php
 
-# Speed up composer dependency installation
-RUN composer global require hirak/prestissimo
+
+RUN pecl channel-update pecl.php.net \
+    && ln -s /usr/bin/php7 /usr/bin/php \
+    && pecl install pecl.php.net/mcrypt-1.0.3
+
+# CONFIGURE WEB SERVER.
+RUN mkdir -p /var/www && \
+    mkdir -p /run/php && \
+    mkdir -p /run/nginx && \
+    mkdir -p /var/log/supervisor && \
+    mkdir -p /etc/nginx/sites-enabled && \
+    mkdir -p /etc/nginx/sites-available && \
+    rm /etc/nginx/nginx.conf && \
+    rm /etc/php7/php-fpm.d/www.conf && \
+    rm /etc/php7/php.ini
+
+# INSTALL COMPOSER.
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
+    php composer-setup.php --install-dir=/usr/bin --filename=composer && \
+    php -r "unlink('composer-setup.php');" \
+    && composer global require hirak/prestissimo
 
 # Cleanup dev dependencies
 RUN apk del -f .build-deps
@@ -96,14 +103,14 @@ ADD config/supervisor/supervisord.conf /etc/supervisord.conf
 RUN mkdir /etc/supervisor/
 ADD config/nginx/nginx.conf /etc/nginx/nginx.conf
 ADD config/nginx/site.conf /etc/nginx/sites-available/default.conf
-ADD config/php/php.ini /etc/php7//php.ini
+ADD config/php/php.ini /etc/php7/php.ini
 ADD config/php-fpm/www.conf /etc/php7/php-fpm.d/www.conf
 RUN chmod 755 /start.sh
 
-EXPOSE 9000
-EXPOSE 80
+# EXPOSE PORTS!
+EXPOSE ${NGINX_HTTPS_PORT} ${NGINX_HTTP_PORT}
 
-# Setup working directory
+# SET THE WORK DIRECTORY.
 WORKDIR /var/www
 
 # KICKSTART!

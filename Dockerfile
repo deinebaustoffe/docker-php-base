@@ -36,7 +36,8 @@ RUN apk add --no-cache --virtual .build-deps \
     gd-dev \
     geoip-dev \
     perl-dev \
-    luajit-dev
+    luajit-dev \
+    sqlite
 
 # INSTALL PHP AND SOME EXTENSIONS. SEE: https://github.com/codecasts/php-alpine
 RUN apk add --no-cache --update php7-dev@php \
@@ -71,11 +72,12 @@ RUN apk add --no-cache --update php7-dev@php \
     php-xmlreader@php \
     php-soap@php \
     php-amqp@php \
-    php-pdo_mysql@php
+    php-pdo_mysql@php \
+    php-pdo_sqlite@php
 
-RUN pecl channel-update pecl.php.net \
+RUN pecl channel-update pear.php.net \
     && ln -s /usr/bin/php7 /usr/bin/php \
-    && pecl install pecl.php.net/mcrypt-1.0.3
+    && pecl install mcrypt
 
 # CONFIGURE WEB SERVER.
 RUN mkdir -p /var/www && \
